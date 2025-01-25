@@ -77,75 +77,8 @@ module tb_fifo ();
 
   initial begin
 
-      repeat (num_seq) begin
-          // Random write operation
-          if ((!$urandom_range(0, 3)) && (!o_full) && (arst_n)) begin
-              wr_en   <= 1;
-              wr_data <= $random;
-          end else begin
-              wr_en <= 0;
-          end
-
-          // Random read operation    
-          if ((!$urandom_range(0, 3)) && (!o_empty) && (arst_n)) begin
-              rd_en <= 1;
-          end else begin
-              rd_en <= 0;
-          end
-          
-          @(posedge i_clk); // Wait for the clock edge before pushing or popping
-
-          // Perform the push_back operation after checking wr_en
-          if (wr_en && !o_full) begin
-              ref_queue.push_back(wr_data);
-          end
-
-          // Perform the pop_front operation after checking rd_en
-          if (rd_en && !o_empty) begin
-              exp_data <= ref_queue.pop_front();
-          end
-
-          // Verify read data
-          if (rd_en && !o_empty) begin
-              if (rd_data !== exp_data) begin
-                  $display("ERROR at time %0t: DUT rd_data <= %h, Expected <= %h", $time, rd_data, exp_data);
-                  error_count <= error_count + 1;
-              end else begin
-                  $display("PASS at time %0t: rd_data <= %h", $time, rd_data);
-              end
-          end
-      end
-
-
-      // // Additional sequence: Write until full, then test full write
-      // repeat (DEPTH + 10) begin
-      //     if (!o_full) begin
-      //         wr_en <= 1;
-      //         wr_data <= $random;
-      //         @(posedge i_clk);
-      //     end else begin
-      //         wr_en <= 0;
-      //         @(posedge i_clk);
-      //         if (o_full && wr_en) begin
-      //             $display("INFO: Tried to write when FIFO is full at time %0t", $time);
-      //         end
-      //     end
-      // end
-
-
-      // // Additional sequence: Read until empty, then test empty read
-      // repeat (DEPTH + 10) begin
-      //     if (!o_empty) begin
-      //         rd_en <= 1;
-      //         @(posedge i_clk);
-      //         if (o_empty && rd_en) begin
-      //             $display("INFO: Tried to read when FIFO is empty at time %0t", $time);
-      //         end
-      //     end else begin
-      //         rd_en <= 0;
-      //     end
-      //     @(posedge i_clk);
-      // end
+      // Run test cases
+      verify_random_write_read();
 
       
 
@@ -157,4 +90,52 @@ module tb_fifo ();
   end 
 
 
+  // Tasks for Test Cases
+task verify_random_write_read();
+    automatic int local_error_count = 0; // Local error counter for this task
+    repeat (num_seq) begin
+        // Random write operation
+        if ((!$urandom_range(0, 3)) && (!o_full) && (arst_n)) begin
+            wr_en   <= 1;
+            wr_data <= $random;
+        end else begin
+            wr_en <= 0;
+        end
+
+        // Random read operation    
+        if ((!$urandom_range(0, 3)) && (!o_empty) && (arst_n)) begin
+            rd_en <= 1;
+        end else begin
+            rd_en <= 0;
+        end
+
+        @(posedge i_clk); // Wait for the clock edge before pushing or popping
+
+        // Perform the push_back operation after checking wr_en
+        if (wr_en && !o_full) begin
+            ref_queue.push_back(wr_data);
+        end
+
+        // Perform the pop_front operation after checking rd_en
+        if (rd_en && !o_empty) begin
+            exp_data <= ref_queue.pop_front();
+        end
+
+        // Verify read data
+        if (rd_en && !o_empty) begin
+            if (rd_data !== exp_data) begin
+                $display("ERROR at time %0t: DUT rd_data <= %h, Expected <= %h", $time, rd_data, exp_data);
+                local_error_count += 1;
+            end else begin
+                $display("PASS at time %0t: rd_data <= %h", $time, rd_data);
+            end
+        end
+    end
+    $display("Random write and read test complete. Errors: %d", local_error_count);
+    error_count += local_error_count;
+endtask
+
+
 endmodule
+
+
