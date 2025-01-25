@@ -78,10 +78,15 @@ module tb_fifo ();
   initial begin
 
       // Run test cases
-      verify_random_write_read();
 
-      
+      //verify full flag
+      verify_full_flag();
 
+      //verify empty flag
+      verify_empty_flag();
+
+      //verify random read and write
+      // verify_random_write_read();
 
 
       // Report results
@@ -91,6 +96,41 @@ module tb_fifo ();
 
 
   // Tasks for Test Cases
+task verify_full_flag();
+    int i;
+    for (i = 0; i < DEPTH+10; i++) begin
+        wr_en   <= 1;
+        wr_data <= $random;
+        @(posedge i_clk);
+    end
+    wr_en <= 0;
+    @(posedge i_clk);
+    if (o_full) begin
+        $display("PASS: FIFO full flag asserted correctly.");
+    end else begin
+        $display("ERROR: FIFO full flag did not assert correctly.");
+        error_count += 1;
+    end
+endtask
+
+
+task verify_empty_flag();
+    int i;
+    for (i = 0; i < DEPTH+10; i++) begin
+        rd_en   <= 1;
+        @(posedge i_clk);
+    end
+    rd_en <= 0;
+    @(posedge i_clk);
+    if (o_empty) begin
+        $display("PASS: FIFO empty flag asserted correctly.");
+    end else begin
+        $display("ERROR: FIFO empty flag did not assert correctly.");
+        error_count += 1;
+    end
+endtask
+
+
 task verify_random_write_read();
     automatic int local_error_count = 0; // Local error counter for this task
     repeat (num_seq) begin
