@@ -86,7 +86,7 @@ module tb_fifo ();
       verify_empty_flag();
 
       //verify random read and write
-      // verify_random_write_read();
+      verify_random_write_read();
 
 
       // Report results
